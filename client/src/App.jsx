@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { socket } from './socket.js';
 import Header from './components/Header.jsx';
 import Lobby from './components/Lobby.jsx';
-import GameBoard from './components/GameBoard.jsx';
+import Board3D from './components/Board3D.jsx';
 import PlayerResources, { RESOURCE_LABELS } from './components/PlayerResources.jsx';
 import DiceRoller from './components/DiceRoller.jsx';
 import GameLog from './components/GameLog.jsx';
@@ -173,7 +173,7 @@ export default function App() {
 
       <div className="game-layout">
         <div className="left-column">
-          <GameBoard
+          <Board3D
             gameState={gameState}
             activeMode={activeMode}
             onVertexActivate={onVertexActivate}

@@ -55,7 +55,7 @@ body {
 }
 
 .app-shell {
-  max-width: 1840px;
+  max-width: 1240px;
   margin: 0 auto;
   padding: 0 24px 40px;
 }
@@ -455,6 +455,64 @@ button.active .cost-chip {
   max-height: 640px;
   display: block;
   border-radius: var(--radius-sm);
+}
+
+.board-frame-3d {
+  padding: 0;
+  height: 560px;
+  overflow: hidden;
+  position: relative;
+}
+
+.board-frame-3d canvas {
+  display: block;
+  border-radius: var(--radius-sm);
+  touch-action: none;
+}
+
+@media (max-width: 640px) {
+  .board-frame-3d {
+    height: 420px;
+  }
+}
+
+.token3d {
+  background: var(--color-parchment);
+  border: 2px solid var(--color-ink);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--color-ink);
+  box-shadow: 0 2px 5px rgba(43, 33, 24, 0.35);
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.token3d.hot {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.token3d.desert-label {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-size: 20px;
+  width: auto;
+  height: auto;
+}
+
+.board-nav-hint {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.78rem;
 }
 
 .tile-resource-icon {

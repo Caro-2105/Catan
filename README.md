@@ -36,6 +36,10 @@ npm run dev
 # ouvre http://localhost:5173
 ```
 
+> `npm install` télécharge aussi les dépendances du plateau 3D (`three`,
+> `@react-three/fiber`, `@react-three/drei`) — un peu plus long la première
+> fois, rien à faire de spécial ensuite.
+
 Ouvrez `http://localhost:5173` dans plusieurs onglets/navigateurs (un par
 joueur), donnez un prénom à chacun, puis lancez la partie une fois au moins
 2 joueurs connectés (jusqu'à 4).
@@ -48,10 +52,17 @@ Pour jouer entre plusieurs machines sur le même réseau, ajustez :
 
 ## Règles implémentées (MVP)
 
-1. **Plateau** : 19 tuiles hexagonales générées à chaque partie (layout
-   classique Catan : 4 forêts, 3 collines, 4 pâturages, 4 champs, 3
-   montagnes, 1 désert), jetons numérotés de 2 à 12 (jamais 7, puisqu'il
-   n'y a pas de voleur).
+1. **Plateau en 3D navigable** : 19 tuiles hexagonales générées à chaque
+   partie (layout classique Catan : 4 forêts, 3 collines, 4 pâturages, 4
+   champs, 3 montagnes, 1 désert), jetons numérotés de 2 à 12 (jamais 7,
+   puisqu'il n'y a pas de voleur), rendu en 3D (Three.js / React Three
+   Fiber) avec un vrai relief par ressource (pics rocheux sur les
+   montagnes, arbres sur les forêts, moutons sur les pâturages, épis sur
+   les champs, buttes d'argile sur les collines) et une caméra libre
+   (clic-glisser pour tourner, molette pour zoomer, clic droit pour
+   déplacer la vue). Colonies, villes et routes sont de vraies pièces en
+   volume (maisons/tours miniatures) plutôt que des formes plates. Voir
+   la section "Plateau 3D" plus bas pour le détail technique.
 2. **Mise en place interactive** : chaque joueur choisit lui-même
    l'emplacement de ses 2 colonies et 2 routes de départ, en cliquant sur le
    plateau, dans l'ordre "en serpent" classique de Catan (J1, J2, J3, puis
@@ -143,7 +154,8 @@ catan-mvp/
         ├── buildCosts.js     # coûts de construction (affichage)
         └── components/
             ├── Lobby.jsx
-            ├── GameBoard.jsx     # rendu SVG du plateau + clics de construction/placement
+            ├── Board3D.jsx       # rendu 3D (Three.js) du plateau + clics de construction/placement
+            ├── GameBoard.jsx     # ancien rendu SVG à plat, conservé mais plus utilisé par App.jsx
             ├── PlayerResources.jsx
             ├── DiceRoller.jsx
             ├── PlayersList.jsx   # liste des joueurs + titre "Route la plus longue"
@@ -160,8 +172,37 @@ pixels. Les sommets (intersections) et arêtes (segments de route) sont
 déduits automatiquement : deux tuiles voisines calculent le même coin en
 pixels, qui devient donc le même identifiant de sommet partagé. Le serveur
 envoie au client les coordonnées x/y de chaque tuile, sommet et arête : le
-client n'a aucune géométrie hexagonale à recalculer, il dessine directement
-un SVG à partir des données reçues.
+client n'a aucune géométrie hexagonale à recalculer. `Board3D.jsx` convertit
+simplement ces coordonnées 2D en positions 3D (un facteur d'échelle fixe,
+x → x, y → z, altitude = 0 pour la surface du plateau) : tuiles, sommets et
+arêtes restent donc parfaitement alignés entre eux, exactement comme dans
+l'ancien rendu SVG (`GameBoard.jsx`, conservé dans le dépôt mais plus
+utilisé).
+
+### Plateau 3D
+
+Le plateau est rendu avec [Three.js](https://threejs.org/) via
+[`@react-three/fiber`](https://docs.pmnd.rs/react-three-fiber) (React) et
+[`@react-three/drei`](https://github.com/pmndrs/drei) (utilitaires : caméra
+libre `OrbitControls`, étiquettes HTML pour les jetons numérotés). Aucun
+modèle 3D externe n'est chargé : chaque tuile, arbre, montagne, mouton,
+colonie ou ville est composé à la volée à partir de formes géométriques
+simples (cônes, boîtes, sphères) — pas de fichier `.glb`/`.gltf` à
+télécharger, donc rien qui puisse être bloqué par un pare-feu d'entreprise.
+Chaque tuile est un vrai prisme hexagonal construit à partir des coordonnées
+exactes de ses sommets (garantit qu'il n'y a jamais d'espace ni de
+chevauchement entre deux tuiles voisines), et les décors (arbres, pics
+rocheux, buttes d'argile, moutons, épis de blé, rochers du désert) sont
+placés aléatoirement mais de façon stable (seed dérivée de l'identifiant de
+la tuile, donc les décors ne "sautent" pas à chaque mise à jour de l'état de
+la partie). La caméra se pilote à la souris (clic-glisser = rotation autour
+du plateau, molette = zoom, clic droit ou deux doigts = déplacement latéral)
+via `OrbitControls`, avec des limites de zoom/angle pour ne jamais passer
+sous le plateau. Les clics sur une intersection ou un segment de route
+utilisent le raycasting standard de `react-three-fiber` (`onClick` /
+`onPointerOver` sur les meshes) et déclenchent exactement les mêmes
+callbacks (`onVertexActivate` / `onEdgeActivate`) que l'ancien rendu SVG :
+aucune règle de jeu n'a changé, seul l'habillage visuel est nouveau.
 
 ### Synchronisation d'état
 
